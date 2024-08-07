@@ -24,25 +24,20 @@ function App() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (item && price && quantity) {
+      const itemPrice = parseFloat(price)
+      
 
-      // const existingItem = items.find(entry => entry.item === item && entry.price === itemPrice);
+      const existingItem = items.find(entry => entry.item === item && entry.price === itemPrice);
 
-      // if (existingItem) {
-      //   setWarning('This item with the same price already exists.');
-      //   return; // Prevent adding the redundant item
-      // }
-
-      // const isUnique = !items.some(entry => entry.item === item && entry.price !== itemPrice);
-
-      // if (!isUnique) {
-      //   setWarning('This item is unique by name but has a different price.');
-      // }
-
+      if (existingItem) {
+        console.log('This item with the same price already exists.');
+        return;
+      }
 
 
       setItems([...items, 
         { item, 
-          price: parseFloat(price), 
+          price: itemPrice, 
           quantity: parseInt(quantity, 10), 
           discount: parseInt(discount),
           amount: (price * quantity) - discount }]);
