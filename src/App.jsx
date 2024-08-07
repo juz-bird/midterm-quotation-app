@@ -1,183 +1,124 @@
-import { useState } from 'react'
-import Card from 'react-bootstrap/Card';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Table from 'react-bootstrap/Table';
-import itemsData from './data.json';
+import { useState, useRef } from "react";
+import { Container, Row, Col, Button, Form } from "react-bootstrap";
+import QuotationTable from "./QuotationTable";
+
+const products = [
+  { code: "p001", name: "Product A", price: 100 },
+  { code: "p002", name: "Product B", price: 200 },
+  { code: "p003", name: "Product C", price: 150 },
+  { code: "p004", name: "Product D", price: 250 },
+];
 
 function App() {
-  const [item, setItem] = useState('');
-  const [price, setPrice] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [discount, setDiscount] = useState('');
-  const [items, setItems] = useState([]);
+  const itemRef = useRef();
+  const ppuRef = useRef();
+  const qtyRef = useRef();
+  const discountRef = useRef();
 
-  const handleItemChange = (e) => setItem(e.target.value);
-  const handlePriceChange = (e) => setPrice(e.target.value);
-  const handleQuantityChange = (e) => setQuantity(e.target.value);
-  const handleDiscountChange = (e) => setDiscount(e.target.value);  
-  
+  const [dataItems, setDataItems] = useState([]);
+  const [ppu, setPpu] = useState(products[0].price);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (item && price && quantity) {
-      const itemPrice = parseFloat(price)
-      
+  const addItem = () => {
+    let item = products.find((v) => itemRef.current.value === v.code);
+    if (!item) return;
 
-      const existingItem = items.find(entry => entry.item === item && entry.price === itemPrice);
+    const newItem = {
+      item: item.name,
+      ppu: parseFloat(ppuRef.current.value),
+      qty: parseInt(qtyRef.current.value),
+      discount: parseInt(discountRef.current.value),
+    };
 
-      if (existingItem) {
-        console.log('This item with the same price already exists.');
-        return;
-      }
+    const existingItemIndex = dataItems.findIndex(
+      (data) => data.item === newItem.item && data.ppu === newItem.ppu,
+    );
 
+    if (existingItemIndex > -1) {
+      const updatedDataItems = [...dataItems];
+      const existingItem = updatedDataItems[existingItemIndex];
 
-      setItems([...items, 
-        { item, 
-          price: itemPrice, 
-          quantity: parseInt(quantity, 10), 
-          discount: parseInt(discount),
-          amount: (price * quantity) - discount }]);
-      // setItem('');
-      // setPrice('');
-      // setQuantity('');
-      // setDiscount('');
+      existingItem.qty += newItem.qty;
+
+      existingItem.discount += newItem.discount;
+
+      updatedDataItems[existingItemIndex] = existingItem;
+      setDataItems(updatedDataItems);
+    } else {
+      setDataItems([...dataItems, newItem]);
     }
   };
 
-  const handleDelete = (index) => {
-    setItems(items.filter((_, i) => i !== index));
+  const clearDataItems = () => {
+    setDataItems([]);
   };
 
-  const handleClearAll = () => {
-    setItems([]);
+  const deleteByIndex = (index) => {
+    let newDataItems = [...dataItems];
+    newDataItems.splice(index, 1);
+    setDataItems(newDataItems);
   };
-  
-  const totalAmount = items.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalDiscount = items.reduce((acc, curr) => acc + curr.discount, 0);
 
-  
-  
+  const productChange = () => {
+    let item = products.find((v) => itemRef.current.value === v.code);
+    setPpu(item.price);
+  };
+
   return (
-    <>
-      <Container>
-        <Row>
-          <Col>
-            <Card className='p-3'>
-              <Form onSubmit={handleSubmit}>
-                <Form.Group controlId="formItem">
-                  <Form.Label>Item</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={item}
-                    onChange={handleItemChange}
-                  >
-                    <option value="">Select an item</option>
-                    {itemsData.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Form.Control>
-                </Form.Group>
-
-                <Form.Group controlId="formPrice">
-                  <Form.Label>Price Per Unit</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={price}
-                    onChange={handlePriceChange}
-                    placeholder="Enter price"
-                />
-                </Form.Group>
-
-                <Form.Group controlId="formQuantity">
-                  <Form.Label>Quantity</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    placeholder="Enter quantity"
-                  />
-                </Form.Group>
-
-                <Form.Group controlId="formDiscount">
-                  <Form.Label>Discount</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={discount}
-                    onChange={handleDiscountChange}
-                    placeholder="Enter Discount"
-                  />
-                </Form.Group>
-
-                <hr></hr>
-
-                <Button variant="primary" className='w-100' type="submit">
-                  Add
-                </Button>
-              </Form>
-            </Card>
-          </Col>
-
-          <Col xs={8}>
-            <Card className='p-3'>
-              <Card.Body>
-                <Card.Title>Quotation</Card.Title>
-                <Button variant="primary" onClick={handleClearAll}>Clear</Button>
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Quantity</th>
-                      <th>Item</th>
-                      <th>Price</th>
-                      <th>Discount</th>
-                      <th>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((entry, index) => (
-                      <tr key={index}>
-                        <td>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDelete(index)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                        <td>{entry.quantity}</td>
-                        <td>{entry.item}</td>
-                        <td>{entry.price.toFixed(2)}</td>
-                        <td>{entry.discount}</td>
-                        <td>{(entry.discount * entry.quantity).toFixed(2)}</td>
-                      </tr>
-                    ))}
-
-                    <tr>
-                      <td colSpan={5} className='text-end'>Discount Total</td>
-                      <td>{totalDiscount}</td>
-                    </tr>
-
-                    <tr>
-                      <td colSpan={5} className='text-end'>Total</td>
-                      <td>{totalAmount}</td>
-                    </tr>
-
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>      
-    </>
-  )
+    <Container>
+      <Row>
+        <Col md={4} style={{ backgroundColor: "#e4e4e4" }}>
+          <Row>
+            <Col>
+              Item
+              <Form.Select ref={itemRef} onChange={productChange}>
+                {products.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Form.Label>Price Per Unit</Form.Label>
+              <Form.Control
+                type="number"
+                ref={ppuRef}
+                value={ppu}
+                onChange={(e) => setPpu(ppuRef.current.value)}
+              />
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Form.Label>Quantity</Form.Label>
+              <Form.Control type="number" ref={qtyRef} defaultValue={1} />
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              <Form.Label>Discount</Form.Label>
+              <Form.Control type="number" ref={discountRef} defaultValue={0} />
+            </Col>
+          </Row>
+          <hr />
+          <div className="d-grid gap-2">
+            <Button variant="primary" onClick={addItem}>
+              Add
+            </Button>
+          </div>
+        </Col>
+        <Col md={8}>
+          <QuotationTable
+            data={dataItems}
+            clearDataItems={clearDataItems}
+            deleteByIndex={deleteByIndex}
+          />
+        </Col>
+      </Row>
+    </Container>
+  );
 }
 
-export default App
+export default App;
